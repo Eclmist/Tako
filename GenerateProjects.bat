@@ -1,6 +1,6 @@
 @echo off
 
-echo Generating Visual Studio solutions for Taco
+echo Generating Visual Studio solutions for Tako
 cmake -B build
 if %errorlevel% neq 0 (
     echo CMake exited with error code %errorlevel%
