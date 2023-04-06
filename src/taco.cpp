@@ -47,17 +47,7 @@ bool Tako::IsCapturing()
     return false;
 }
 
-Tako::TakoError Tako::GetBuffer(TakoDisplayBuffer** outBuffer)
-{
-    return TakoError::OK;
-}
-
-Tako::TakoError Tako::GetBuffer(uint32_t width, uint32_t height, TakoDisplayBuffer** outBuffer)
-{
-    return TakoError::OK;
-}
-
-Tako::TakoError Tako::GetBuffer(uint32_t x, uint32_t y, uint32_t width, uint32_t height, TakoDisplayBuffer** outBuffer)
+Tako::TakoError Tako::UpdateBufferRegion(HANDLE bufferHandle, uint32_t width, uint32_t height, uint32_t x, uint32_t y)
 {
     return TakoError::OK;
 }

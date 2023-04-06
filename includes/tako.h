@@ -47,7 +47,7 @@ namespace Tako {
     enum class TakoError : uint32_t
     {
         OK = 0,
-        FAILED = -1,
+        FAILED = 0x7FFFFFFF,
         NOTSUPPORTED = 1,
     };
 
@@ -58,7 +58,5 @@ namespace Tako {
     TAKO_API TakoError StopCapture();
     TAKO_API bool IsCapturing();
 
-    TAKO_API TakoError GetBuffer(TakoDisplayBuffer** outBuffer);
-    TAKO_API TakoError GetBuffer(uint32_t width, uint32_t height, TakoDisplayBuffer** outBuffer);
-    TAKO_API TakoError GetBuffer(uint32_t x, uint32_t y, uint32_t width, uint32_t height, TakoDisplayBuffer** outBuffer);
+    TAKO_API TakoError UpdateBufferRegion(HANDLE bufferHandle, uint32_t width, uint32_t height, uint32_t x = 0, uint32_t y = 0);
 }
