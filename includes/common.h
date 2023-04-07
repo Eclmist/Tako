@@ -9,7 +9,7 @@
     (at your option) any later version.
 
     This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    but WITHOUT ANY WARRANT without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
     GNU General Public License for more details.
 
@@ -19,8 +19,18 @@
 
 #pragma once
 
-#include <cstdint>
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
 #include <d3d11.h>
+#include <dxgi1_2.h>
+#include <DirectXMath.h>
+#include <vector>
+#include <cstdint>
+
+#include <wrl.h>
+namespace wrl = Microsoft::WRL;
 
 #ifdef TACO_EXPORT_DLL
 #define TAKO_API __declspec(dllexport)
@@ -28,7 +38,10 @@
 #define TAKO_API __declspec(dllimport)
 #endif
 
-namespace Tako {
+static constexpr uint32_t MaxNumDisplays = 8;
+
+namespace Tako
+{
     struct TakoRect
     {
         uint32_t m_X;
@@ -40,23 +53,17 @@ namespace Tako {
     struct TakoDisplayBuffer
     {
         ID3D11Texture2D* m_Buffer;
-        TakoRect m_Rect;
+        TakoRect m_DisplayRect;
         uint32_t m_DisplayIndex;
     };
 
     enum class TakoError : uint32_t
     {
         OK = 0,
-        FAILED = 0x7FFFFFFF,
-        NOTSUPPORTED = 1,
+        NOT_SUPPORTED = 1,
+        DX11_ERROR = 2,
+        EXPECTED_ERROR = 3,
+        UNEXPECTED_ERROR = 4,
     };
-
-    TAKO_API TakoError Initialize();
-    TAKO_API TakoError Shutdown();
-
-    TAKO_API TakoError StartCapture();
-    TAKO_API TakoError StopCapture();
-    TAKO_API bool IsCapturing();
-
-    TAKO_API TakoError UpdateBufferRegion(HANDLE bufferHandle, uint32_t width, uint32_t height, uint32_t x = 0, uint32_t y = 0);
 }
+
