@@ -44,7 +44,7 @@ target_compile_definitions(Tako PRIVATE UNICODE)
 set_target_properties(Tako PROPERTIES VERSION ${PROJECT_VERSION})
 
 # Link d3d11
-target_link_libraries(Tako PRIVATE d3d11)
+target_link_libraries(Tako PRIVATE d3d11 dxguid.lib dxgi.lib)
 
 # Set the VS shader properties
 set_property(SOURCE ${VS_SHADER} PROPERTY VS_SHADER_TYPE Vertex)

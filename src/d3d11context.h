@@ -33,11 +33,11 @@ namespace Tako
         TakoError Shutdown();
         
     public:
-        inline IDXGIAdapter* GetDxgiAdapter() const { return m_DxgiAdapter.Get(); }
-        inline IDXGIFactory2* GetDxgiFactory() const { return m_DxgiFactory.Get(); }
-        inline IDXGIDevice* GetDxgiDevice() const { return m_DxgiDevice.Get(); }
-        inline ID3D11Device* GetDevice() const { return m_Device.Get(); }
-        inline ID3D11DeviceContext* GetDeviceContext() const { return m_DeviceContext.Get(); }
+        inline wrl::ComPtr<IDXGIAdapter> GetDxgiAdapter() const { return m_DxgiAdapter; }
+        inline wrl::ComPtr<IDXGIFactory2> GetDxgiFactory() const { return m_DxgiFactory; }
+        inline wrl::ComPtr<IDXGIDevice> GetDxgiDevice() const { return m_DxgiDevice; }
+        inline wrl::ComPtr<ID3D11Device> GetDevice() const { return m_Device; }
+        inline wrl::ComPtr<ID3D11DeviceContext> GetDeviceContext() const { return m_DeviceContext; }
 
     private:
         TakoError InitializeD3D11();

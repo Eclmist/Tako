@@ -93,15 +93,15 @@ Tako::TakoError Tako::D3D11Context::InitializeDevice()
 
 Tako::TakoError Tako::D3D11Context::InitializeDxgi()
 {
-    HRESULT hr = m_Device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(m_DxgiDevice.GetAddressOf()));
+    HRESULT hr = m_Device->QueryInterface(__uuidof(IDXGIDevice), &m_DxgiDevice);
     if (FAILED(hr))
         return TakoError::DX11_ERROR;
 
-    hr = m_DxgiDevice->GetParent(__uuidof(IDXGIAdapter), reinterpret_cast<void**>(m_DxgiAdapter.GetAddressOf()));
+    hr = m_DxgiDevice->GetParent(__uuidof(IDXGIAdapter), &m_DxgiAdapter);
     if (FAILED(hr))
         return TakoError::DX11_ERROR;
 
-    hr = m_DxgiAdapter->GetParent(__uuidof(IDXGIFactory2), reinterpret_cast<void**>(m_DxgiFactory.GetAddressOf()));
+    hr = m_DxgiAdapter->GetParent(__uuidof(IDXGIFactory2), &m_DxgiFactory);
     if (FAILED(hr))
         return TakoError::DX11_ERROR;
 

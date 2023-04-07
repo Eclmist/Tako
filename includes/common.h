@@ -52,7 +52,7 @@ namespace Tako
 
     struct TakoDisplayBuffer
     {
-        ID3D11Texture2D* m_Buffer;
+        wrl::ComPtr<ID3D11Texture2D> m_Buffer;
         TakoRect m_DisplayRect;
         uint32_t m_DisplayIndex;
     };

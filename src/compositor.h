@@ -36,12 +36,11 @@ namespace Tako
         TakoError RenderComposite(HANDLE outTexture, TakoRect targetRect, TakoDisplayBuffer* displays, uint32_t numDisplays = 1);
 
     private:
+        TakoError InitializeSampler();
         TakoError InitializeShaders();
 
     private:
-        wrl::ComPtr<ID3D11RenderTargetView> m_TargetTextureRtv;
         wrl::ComPtr<ID3D11SamplerState> m_Sampler;
-        wrl::ComPtr<ID3D11BlendState> m_BlendState;
         wrl::ComPtr<ID3D11VertexShader> m_VertexShader;
         wrl::ComPtr<ID3D11PixelShader> m_PixelShader;
         wrl::ComPtr<ID3D11InputLayout> m_InputLayout;

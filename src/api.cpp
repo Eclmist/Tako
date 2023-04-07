@@ -21,23 +21,29 @@
 #include "d3d11context.h"
 #include "capturemanager.h"
 #include "compositor.h"
+#include <dxgidebug.h>
+#include <dxgi1_3.h>
 
-Tako::D3D11Context g_D3D11Context;
-Tako::CaptureManager g_CaptureManager;
-Tako::Compositor g_Compositor;
+Tako::D3D11Context* g_D3D11Context;
+Tako::CaptureManager* g_CaptureManager;
+Tako::Compositor* g_Compositor;
 
 Tako::TakoError Tako::Initialize()
 {
     TakoError err;
-    err = g_D3D11Context.Initialize();
+
+    g_D3D11Context = new Tako::D3D11Context();
+    err = g_D3D11Context->Initialize();
     if (err != TakoError::OK)
         return err;
 
-    err = g_CaptureManager.Initialize();
+    g_CaptureManager = new Tako::CaptureManager();
+    err = g_CaptureManager->Initialize();
     if (err != TakoError::OK)
         return err;
 
-    err = g_Compositor.Initialize();
+    g_Compositor = new Tako::Compositor();
+    err = g_Compositor->Initialize();
     if (err != TakoError::OK)
         return err;
 
@@ -48,17 +54,20 @@ Tako::TakoError Tako::Shutdown()
 {
     TakoError err;
 
-    err = g_D3D11Context.Shutdown();
+    err = g_CaptureManager->Shutdown();
     if (err != TakoError::OK)
         return err;
+    delete g_CaptureManager;
 
-    err = g_CaptureManager.Shutdown();
+    err = g_Compositor->Shutdown();
     if (err != TakoError::OK)
         return err;
+    delete g_Compositor;
 
-    err = g_Compositor.Shutdown();
+    err = g_D3D11Context->Shutdown();
     if (err != TakoError::OK)
         return err;
+    delete g_D3D11Context;
 
     return TakoError::OK;
 }
@@ -67,14 +76,14 @@ Tako::TakoError Tako::CaptureIntoBuffer(HANDLE bufferHandle, TakoRect targetRect
 {
     TakoError err;
 
-    TakoDisplayBuffer overlappedDisplays[MaxNumDisplays];
+    static TakoDisplayBuffer overlappedDisplays[MaxNumDisplays];
     uint32_t numDisplays;
 
-    err = g_CaptureManager.Capture(overlappedDisplays, &numDisplays, targetRect);
+    err = g_CaptureManager->Capture(targetRect, overlappedDisplays, &numDisplays);
     if (err != TakoError::OK)
         return err;
 
-    g_Compositor.RenderComposite(bufferHandle, targetRect, overlappedDisplays);
+    g_Compositor->RenderComposite(bufferHandle, targetRect, overlappedDisplays, numDisplays);
     if (err != TakoError::OK)
         return err;
 

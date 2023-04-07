@@ -17,8 +17,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-//Texture2D g_SharedTexture   : register( t0 );
-//SamplerState g_Sampler      : register( s0 );
+Texture2D g_SharedTexture   : register( t0 );
+SamplerState g_Sampler      : register( s0 );
 
 struct PS_INPUT
 {
@@ -28,7 +28,6 @@ struct PS_INPUT
 
 float4 PS_Main(PS_INPUT input) : SV_Target
 {
-    return float4(input.UV,1,1);
-    //return g_SharedTexture.Sample(g_Sampler, input.UV);
+    return g_SharedTexture.Sample(g_Sampler, input.UV);
 }
 

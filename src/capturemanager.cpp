@@ -20,7 +20,7 @@
 #include "capturemanager.h"
 #include "d3d11context.h"
 
-extern Tako::D3D11Context g_D3D11Context;
+extern Tako::D3D11Context* g_D3D11Context;
 
 Tako::TakoError Tako::CaptureManager::Initialize()
 {
@@ -42,8 +42,12 @@ Tako::TakoError Tako::CaptureManager::Shutdown()
     return TakoError::OK;
 }
 
-Tako::TakoError Tako::CaptureManager::Capture(TakoDisplayBuffer* outDisplays, uint32_t* outNumBuffers, TakoRect targetRect)
+Tako::TakoError Tako::CaptureManager::Capture(TakoRect targetRect, TakoDisplayBuffer* outDisplays, uint32_t* outNumBuffers)
 {
+
+    TakoError err = Capture(0, outDisplays);
+    *outNumBuffers = 1;
+
     //for (wrl::ComPtr<IDXGIOutput1> display : m_DxgiOutputs)
     //{
     //    if (true /*targetRect.Intersect(display.getRect())*/)
@@ -53,14 +57,14 @@ Tako::TakoError Tako::CaptureManager::Capture(TakoDisplayBuffer* outDisplays, ui
     //    }
     //}
 
-    return TakoError::OK;
+    return err;
 }
 
 Tako::TakoError Tako::CaptureManager::InitializeDxgiOutputs()
 {
     // Enumerate the available adapters (i.e., graphics cards)
     IDXGIAdapter1* adapter = nullptr;
-    for (uint32_t adapterIndex = 0; g_D3D11Context.GetDxgiFactory()->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND; adapterIndex++)
+    for (uint32_t adapterIndex = 0; g_D3D11Context->GetDxgiFactory()->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND; adapterIndex++)
     {
         // Enumerate the available outputs (i.e., display connectors) for this adapter
         IDXGIOutput* output = nullptr;
@@ -75,13 +79,18 @@ Tako::TakoError Tako::CaptureManager::InitializeDxgiOutputs()
             output->Release();
             output = nullptr;
 
-            m_DxgiOutputs.push_back(dxgiOutput1);
+            m_DxgiOutputs.emplace_back(dxgiOutput1);
 
             IDXGIOutputDuplication* duplicator;
-            hr = dxgiOutput1->DuplicateOutput(g_D3D11Context.GetDevice(), &duplicator);
+            hr = dxgiOutput1->DuplicateOutput(g_D3D11Context->GetDevice().Get(), &duplicator);
 
             if (SUCCEEDED(hr))
                 m_DxgiDuplications.push_back(duplicator);
+
+            ID3D11Texture2D* outputTexture;
+            TakoError err = CreateOutputTexture(outputIndex, &outputTexture);
+            if (err == TakoError::OK)
+                m_CapturedTextures.emplace_back(outputTexture);
         }
 
         adapter->Release();
@@ -124,8 +133,96 @@ Tako::TakoError Tako::CaptureManager::InitializeDesktopRect()
     return TakoError::OK;
 }
 
-Tako::TakoError Tako::CaptureManager::Capture(TakoDisplayBuffer* out, uint32_t displayIndex)
+Tako::TakoError Tako::CaptureManager::Capture(uint32_t displayIndex, TakoDisplayBuffer* out)
 {
+    TakoError err;
+
+    ID3D11Texture2D* srcTexture = nullptr;
+    DXGI_OUTDUPL_FRAME_INFO frameInfo;
+    err = AcquireNextFrame(displayIndex, &srcTexture, &frameInfo);
+    if (err != TakoError::OK)
+        return err;
+
+    g_D3D11Context->GetDeviceContext()->CopyResource(m_CapturedTextures[displayIndex].Get(), srcTexture);
+
+    err = ReleaseFrame(displayIndex, srcTexture);
+    if (err != TakoError::OK)
+        return err;
+
+    out->m_Buffer = m_CapturedTextures[displayIndex];
+    out->m_DisplayIndex = displayIndex;
+    out->m_DisplayRect = { 0, 0, 5120, 1080 };
+
+    //srcTexture->Release();
+
+    return TakoError::OK;
+}
+
+Tako::TakoError Tako::CaptureManager::CreateOutputTexture(uint32_t displayIndex, ID3D11Texture2D** out)
+{
+    DXGI_OUTPUT_DESC displayDesc;
+    m_DxgiOutputs[displayIndex]->GetDesc(&displayDesc);
+
+    D3D11_TEXTURE2D_DESC desc;
+    RtlZeroMemory(&desc, sizeof(D3D11_TEXTURE2D_DESC));
+    desc.Width = displayDesc.DesktopCoordinates.right - displayDesc.DesktopCoordinates.left;
+    desc.Height = displayDesc.DesktopCoordinates.bottom - displayDesc.DesktopCoordinates.top;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = 0;
+    desc.MiscFlags = 0;
+
+    HRESULT hr = g_D3D11Context->GetDevice()->CreateTexture2D(&desc, nullptr, out);
+    if (FAILED(hr))
+        return TakoError::DX11_ERROR;
+
+    return TakoError::OK;
+}
+
+Tako::TakoError Tako::CaptureManager::AcquireNextFrame(int32_t displayIndex, ID3D11Texture2D** out, DXGI_OUTDUPL_FRAME_INFO* outFrame)
+{
+    DXGI_OUTPUT_DESC displayDesc;
+    m_DxgiOutputs[displayIndex]->GetDesc(&displayDesc);
+
+    IDXGIResource* outResource = nullptr;
+
+    while (true)
+    {
+        DXGI_OUTDUPL_FRAME_INFO frameInfo;
+        HRESULT hr = m_DxgiDuplications[displayIndex]->AcquireNextFrame(INFINITE, &frameInfo, &outResource);
+
+        if (hr == DXGI_ERROR_WAIT_TIMEOUT)
+            continue;
+
+        if (FAILED(hr))
+            return TakoError::DX11_ERROR;
+
+        *outFrame = frameInfo;
+        break;
+    }
+
+    if ((*out) != nullptr)
+        (*out)->Release();
+
+    HRESULT hr = outResource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(out));
+    outResource->Release();
+
+    if (FAILED(hr))
+        return TakoError::DX11_ERROR;
+
+    return TakoError::OK;
+}
+
+Tako::TakoError Tako::CaptureManager::ReleaseFrame(int32_t displayIndex, ID3D11Texture2D* frame)
+{
+    HRESULT hr = m_DxgiDuplications[displayIndex]->ReleaseFrame();
+    if (FAILED(hr))
+        return TakoError::DX11_ERROR;
+
     return TakoError::OK;
 }
 

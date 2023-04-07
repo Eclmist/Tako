@@ -31,16 +31,20 @@ namespace Tako
 
         TakoError Initialize();
         TakoError Shutdown();
-        TakoError Capture(TakoDisplayBuffer* outDisplays, uint32_t* outNumBuffers, TakoRect targetRect);
+        TakoError Capture(TakoRect targetRect, TakoDisplayBuffer* outDisplays, uint32_t* outNumBuffers);
 
     private:
         TakoError InitializeDxgiOutputs();
         TakoError InitializeDesktopRect();
-        TakoError Capture(TakoDisplayBuffer* out, uint32_t displayIndex);
+        TakoError Capture(uint32_t displayIndex, TakoDisplayBuffer* out);
+        TakoError CreateOutputTexture(uint32_t displayIndex, ID3D11Texture2D** out);
+        TakoError AcquireNextFrame(int32_t displayIndex, ID3D11Texture2D** out, DXGI_OUTDUPL_FRAME_INFO* outFrame);
+        TakoError ReleaseFrame(int32_t displayIndex, ID3D11Texture2D* frame);
 
     private:
         std::vector<wrl::ComPtr<IDXGIOutput1>> m_DxgiOutputs;
         std::vector<wrl::ComPtr<IDXGIOutputDuplication>> m_DxgiDuplications;
+        std::vector<wrl::ComPtr<ID3D11Texture2D>> m_CapturedTextures;
 
         TakoRect m_DesktopRect; // A rect that represents the entire desktop comprised of all displays
     };
