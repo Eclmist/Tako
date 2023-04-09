@@ -79,13 +79,14 @@ Tako::TakoError Tako::CaptureManager::InitializeDxgiOutputs()
             output->Release();
             output = nullptr;
 
-            m_DxgiOutputs.emplace_back(dxgiOutput1);
-
             IDXGIOutputDuplication* duplicator;
             hr = dxgiOutput1->DuplicateOutput(g_D3D11Context->GetDevice().Get(), &duplicator);
 
-            if (SUCCEEDED(hr))
-                m_DxgiDuplications.push_back(duplicator);
+            if (FAILED(hr))
+                continue;
+
+            m_DxgiDuplications.push_back(duplicator);
+            m_DxgiOutputs.emplace_back(dxgiOutput1);
 
             ID3D11Texture2D* outputTexture;
             TakoError err = CreateOutputTexture(outputIndex, &outputTexture);
@@ -138,8 +139,7 @@ Tako::TakoError Tako::CaptureManager::Capture(uint32_t displayIndex, TakoDisplay
     TakoError err;
 
     ID3D11Texture2D* srcTexture = nullptr;
-    DXGI_OUTDUPL_FRAME_INFO frameInfo;
-    err = AcquireNextFrame(displayIndex, &srcTexture, &frameInfo);
+    err = AcquireNextFrame(displayIndex, &srcTexture, &out->m_DisplayRect);
     if (err != TakoError::OK)
         return err;
 
@@ -151,9 +151,6 @@ Tako::TakoError Tako::CaptureManager::Capture(uint32_t displayIndex, TakoDisplay
 
     out->m_Buffer = m_CapturedTextures[displayIndex];
     out->m_DisplayIndex = displayIndex;
-    out->m_DisplayRect = { 0, 0, 5120, 1080 };
-
-    //srcTexture->Release();
 
     return TakoError::OK;
 }
@@ -183,7 +180,7 @@ Tako::TakoError Tako::CaptureManager::CreateOutputTexture(uint32_t displayIndex,
     return TakoError::OK;
 }
 
-Tako::TakoError Tako::CaptureManager::AcquireNextFrame(int32_t displayIndex, ID3D11Texture2D** out, DXGI_OUTDUPL_FRAME_INFO* outFrame)
+Tako::TakoError Tako::CaptureManager::AcquireNextFrame(int32_t displayIndex, ID3D11Texture2D** out, TakoRect* outRect)
 {
     DXGI_OUTPUT_DESC displayDesc;
     m_DxgiOutputs[displayIndex]->GetDesc(&displayDesc);
@@ -201,7 +198,6 @@ Tako::TakoError Tako::CaptureManager::AcquireNextFrame(int32_t displayIndex, ID3
         if (FAILED(hr))
             return TakoError::DX11_ERROR;
 
-        *outFrame = frameInfo;
         break;
     }
 
@@ -210,6 +206,11 @@ Tako::TakoError Tako::CaptureManager::AcquireNextFrame(int32_t displayIndex, ID3
 
     HRESULT hr = outResource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(out));
     outResource->Release();
+
+    outRect->m_Width = displayDesc.DesktopCoordinates.right - displayDesc.DesktopCoordinates.left;
+    outRect->m_Height = displayDesc.DesktopCoordinates.bottom - displayDesc.DesktopCoordinates.top;
+    outRect->m_X = displayDesc.DesktopCoordinates.left;
+    outRect->m_Y = displayDesc.DesktopCoordinates.right;
 
     if (FAILED(hr))
         return TakoError::DX11_ERROR;

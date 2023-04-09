@@ -44,10 +44,16 @@ namespace Tako
 {
     struct TakoRect
     {
-        uint32_t m_X;
-        uint32_t m_Y;
+        int32_t m_X;
+        int32_t m_Y;
         uint32_t m_Width;
         uint32_t m_Height;
+
+        bool operator==(const TakoRect& other)
+        {
+            return other.m_X == m_X && other.m_Y == m_Y &&
+                other.m_Width == m_Width && other.m_Height == m_Height;
+        }
     };
 
     struct TakoDisplayBuffer

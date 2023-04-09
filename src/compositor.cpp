@@ -73,12 +73,12 @@ Tako::TakoError Tako::Compositor::RenderComposite(HANDLE sharedTextureHandle, Ta
 
     // Set viewport
     D3D11_VIEWPORT vp;
-    vp.Width = static_cast<FLOAT>(targetRect.m_Width);
-    vp.Height = static_cast<FLOAT>(targetRect.m_Height);
+    vp.Width = static_cast<FLOAT>(displays[0].m_DisplayRect.m_Width);
+    vp.Height = static_cast<FLOAT>(displays[0].m_DisplayRect.m_Height);
     vp.MinDepth = 0.0f;
     vp.MaxDepth = 1.0f;
-    vp.TopLeftX = 0;
-    vp.TopLeftY = 0;
+    vp.TopLeftX = -static_cast<FLOAT>(targetRect.m_X);
+    vp.TopLeftY = -static_cast<FLOAT>(targetRect.m_Y);
     g_D3D11Context->GetDeviceContext()->RSSetViewports(1, &vp);
 
     // Vertices for drawing whole texture
@@ -175,7 +175,7 @@ Tako::TakoError Tako::Compositor::InitializeSampler()
 {
     D3D11_SAMPLER_DESC sampleDesc;
     RtlZeroMemory(&sampleDesc, sizeof(sampleDesc));
-    sampleDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sampleDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
     sampleDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
     sampleDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
     sampleDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;

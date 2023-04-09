@@ -38,7 +38,7 @@ namespace Tako
         TakoError InitializeDesktopRect();
         TakoError Capture(uint32_t displayIndex, TakoDisplayBuffer* out);
         TakoError CreateOutputTexture(uint32_t displayIndex, ID3D11Texture2D** out);
-        TakoError AcquireNextFrame(int32_t displayIndex, ID3D11Texture2D** out, DXGI_OUTDUPL_FRAME_INFO* outFrame);
+        TakoError AcquireNextFrame(int32_t displayIndex, ID3D11Texture2D** out, TakoRect* outRect);
         TakoError ReleaseFrame(int32_t displayIndex, ID3D11Texture2D* frame);
 
     private:
