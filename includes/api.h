@@ -20,6 +20,7 @@
 #pragma once
 
 #include "common.h"
+#include "graphiccontext.h"
 
 namespace Tako {
 

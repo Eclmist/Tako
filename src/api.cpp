@@ -18,13 +18,13 @@
 */
 
 #include "api.h"
-#include "d3d11context.h"
+#include "graphiccontext.h"
 #include "capturemanager.h"
 #include "compositor.h"
 #include <dxgidebug.h>
 #include <dxgi1_3.h>
 
-Tako::D3D11Context* g_D3D11Context;
+Tako::GraphicContext* g_GraphicContext;
 Tako::CaptureManager* g_CaptureManager;
 Tako::Compositor* g_Compositor;
 
@@ -32,8 +32,8 @@ Tako::TakoError Tako::Initialize()
 {
     TakoError err;
 
-    g_D3D11Context = new Tako::D3D11Context();
-    err = g_D3D11Context->Initialize();
+    g_GraphicContext = new Tako::GraphicContext();
+    err = g_GraphicContext->Initialize();
     if (err != TakoError::OK)
         return err;
 
@@ -64,10 +64,10 @@ Tako::TakoError Tako::Shutdown()
         return err;
     delete g_Compositor;
 
-    err = g_D3D11Context->Shutdown();
+    err = g_GraphicContext->Shutdown();
     if (err != TakoError::OK)
         return err;
-    delete g_D3D11Context;
+    delete g_GraphicContext;
 
     return TakoError::OK;
 }

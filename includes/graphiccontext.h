@@ -23,11 +23,11 @@
 
 namespace Tako
 {
-    class D3D11Context
+    class TAKO_API GraphicContext
     {
     public:
-        D3D11Context() = default;
-        ~D3D11Context() = default;
+        GraphicContext() = default;
+        ~GraphicContext() = default;
 
         TakoError Initialize();
         TakoError Shutdown();
@@ -40,7 +40,7 @@ namespace Tako
         inline wrl::ComPtr<ID3D11DeviceContext> GetDeviceContext() const { return m_DeviceContext; }
 
     private:
-        TakoError InitializeD3D11();
+        TakoError InitializeGraphicsApi();
         TakoError InitializeDevice();
         TakoError InitializeDxgi();
 

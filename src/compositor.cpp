@@ -18,11 +18,11 @@
 */
 
 #include "compositor.h"
-#include "d3d11context.h"
+#include "graphiccontext.h"
 #include "data/compositor_vs.h"
 #include "data/compositor_ps.h"
 
-extern Tako::D3D11Context* g_D3D11Context;
+extern Tako::GraphicContext* g_GraphicContext;
 
 Tako::TakoError Tako::Compositor::Initialize()
 {
@@ -51,7 +51,7 @@ Tako::TakoError Tako::Compositor::RenderComposite(HANDLE sharedTextureHandle, Ta
     ID3D11Texture2D* sharedTexture = nullptr;
     IDXGIKeyedMutex* keyMutex = nullptr;
 
-    HRESULT hr = g_D3D11Context->GetDevice()->OpenSharedResource(sharedTextureHandle, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&sharedTexture));
+    HRESULT hr = g_GraphicContext->GetDevice()->OpenSharedResource(sharedTextureHandle, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&sharedTexture));
     if (FAILED(hr))
         return TakoError::DX11_ERROR;
 
@@ -79,7 +79,7 @@ Tako::TakoError Tako::Compositor::RenderComposite(HANDLE sharedTextureHandle, Ta
     vp.MaxDepth = 1.0f;
     vp.TopLeftX = -static_cast<FLOAT>(targetRect.m_X);
     vp.TopLeftY = -static_cast<FLOAT>(targetRect.m_Y);
-    g_D3D11Context->GetDeviceContext()->RSSetViewports(1, &vp);
+    g_GraphicContext->GetDeviceContext()->RSSetViewports(1, &vp);
 
     // Vertices for drawing whole texture
     DirectX::XMFLOAT3 Pos;
@@ -110,7 +110,7 @@ Tako::TakoError Tako::Compositor::RenderComposite(HANDLE sharedTextureHandle, Ta
     rtvDesc.Texture2D.MipSlice = 0;
 
     ID3D11RenderTargetView* rtvResource = nullptr;
-    hr = g_D3D11Context->GetDevice()->CreateRenderTargetView(sharedTexture, &rtvDesc, &rtvResource);
+    hr = g_GraphicContext->GetDevice()->CreateRenderTargetView(sharedTexture, &rtvDesc, &rtvResource);
     if (FAILED(hr))
         return TakoError::DX11_ERROR;
 
@@ -121,20 +121,20 @@ Tako::TakoError Tako::Compositor::RenderComposite(HANDLE sharedTextureHandle, Ta
     srvDesc.Texture2D.MipLevels = sharedTextureDesc.MipLevels;
 
     ID3D11ShaderResourceView* srvResource = nullptr;
-    hr = g_D3D11Context->GetDevice()->CreateShaderResourceView(displays[0].m_Buffer.Get(), &srvDesc, &srvResource);
+    hr = g_GraphicContext->GetDevice()->CreateShaderResourceView(displays[0].m_Buffer.Get(), &srvDesc, &srvResource);
     if (FAILED(hr))
         return TakoError::DX11_ERROR;
 
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
     FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
-    g_D3D11Context->GetDeviceContext()->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
-    g_D3D11Context->GetDeviceContext()->OMSetRenderTargets(1, &rtvResource, nullptr);
-    g_D3D11Context->GetDeviceContext()->VSSetShader(m_VertexShader.Get(), nullptr, 0);
-    g_D3D11Context->GetDeviceContext()->PSSetShader(m_PixelShader.Get(), nullptr, 0);
-    g_D3D11Context->GetDeviceContext()->PSSetShaderResources(0, 1, &srvResource);
-    g_D3D11Context->GetDeviceContext()->PSSetSamplers(0, 1, m_Sampler.GetAddressOf());
-    g_D3D11Context->GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    g_GraphicContext->GetDeviceContext()->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+    g_GraphicContext->GetDeviceContext()->OMSetRenderTargets(1, &rtvResource, nullptr);
+    g_GraphicContext->GetDeviceContext()->VSSetShader(m_VertexShader.Get(), nullptr, 0);
+    g_GraphicContext->GetDeviceContext()->PSSetShader(m_PixelShader.Get(), nullptr, 0);
+    g_GraphicContext->GetDeviceContext()->PSSetShaderResources(0, 1, &srvResource);
+    g_GraphicContext->GetDeviceContext()->PSSetSamplers(0, 1, m_Sampler.GetAddressOf());
+    g_GraphicContext->GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     D3D11_BUFFER_DESC bufferDesc;
     RtlZeroMemory(&bufferDesc, sizeof(bufferDesc));
@@ -148,14 +148,14 @@ Tako::TakoError Tako::Compositor::RenderComposite(HANDLE sharedTextureHandle, Ta
 
     // Create vertex buffer
     ID3D11Buffer* vertexBuffer = nullptr;
-    hr = g_D3D11Context->GetDevice()->CreateBuffer(&bufferDesc, &initData, &vertexBuffer);
+    hr = g_GraphicContext->GetDevice()->CreateBuffer(&bufferDesc, &initData, &vertexBuffer);
     if (FAILED(hr))
         return TakoError::DX11_ERROR;
 
-    g_D3D11Context->GetDeviceContext()->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+    g_GraphicContext->GetDeviceContext()->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
     // Draw textured quad onto render target
-    g_D3D11Context->GetDeviceContext()->Draw(NumVertices, 0);
+    g_GraphicContext->GetDeviceContext()->Draw(NumVertices, 0);
 
     // Release keyed mutex
     hr = keyMutex->ReleaseSync(0);
@@ -182,7 +182,7 @@ Tako::TakoError Tako::Compositor::InitializeSampler()
     sampleDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
     sampleDesc.MinLOD = 0;
     sampleDesc.MaxLOD = D3D11_FLOAT32_MAX;
-    HRESULT hr = g_D3D11Context->GetDevice()->CreateSamplerState(&sampleDesc, &m_Sampler);
+    HRESULT hr = g_GraphicContext->GetDevice()->CreateSamplerState(&sampleDesc, &m_Sampler);
 
     if (FAILED(hr))
         return TakoError::DX11_ERROR;
@@ -195,7 +195,7 @@ Tako::TakoError Tako::Compositor::InitializeShaders()
     HRESULT hr;
 
     UINT size = ARRAYSIZE(g_VS_Main);
-    hr = g_D3D11Context->GetDevice()->CreateVertexShader(g_VS_Main, size, nullptr, &m_VertexShader);
+    hr = g_GraphicContext->GetDevice()->CreateVertexShader(g_VS_Main, size, nullptr, &m_VertexShader);
     if (FAILED(hr))
         return TakoError::DX11_ERROR;
 
@@ -206,14 +206,14 @@ Tako::TakoError Tako::Compositor::InitializeShaders()
     };
 
     UINT numElements = ARRAYSIZE(inputLayout);
-    hr = g_D3D11Context->GetDevice()->CreateInputLayout(inputLayout, numElements, g_VS_Main, size, m_InputLayout.GetAddressOf());
+    hr = g_GraphicContext->GetDevice()->CreateInputLayout(inputLayout, numElements, g_VS_Main, size, m_InputLayout.GetAddressOf());
     if (FAILED(hr))
         return TakoError::DX11_ERROR;
 
-    g_D3D11Context->GetDeviceContext()->IASetInputLayout(m_InputLayout.Get());
+    g_GraphicContext->GetDeviceContext()->IASetInputLayout(m_InputLayout.Get());
 
     size = ARRAYSIZE(g_PS_Main);
-    hr = g_D3D11Context->GetDevice()->CreatePixelShader(g_PS_Main, size, nullptr, &m_PixelShader);
+    hr = g_GraphicContext->GetDevice()->CreatePixelShader(g_PS_Main, size, nullptr, &m_PixelShader);
     if (FAILED(hr))
         return TakoError::DX11_ERROR;
 

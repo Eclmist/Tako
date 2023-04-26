@@ -18,9 +18,9 @@
 */
 
 #include "capturemanager.h"
-#include "d3d11context.h"
+#include "graphiccontext.h"
 
-extern Tako::D3D11Context* g_D3D11Context;
+extern Tako::GraphicContext* g_GraphicContext;
 
 Tako::TakoError Tako::CaptureManager::Initialize()
 {
@@ -64,7 +64,7 @@ Tako::TakoError Tako::CaptureManager::InitializeDxgiOutputs()
 {
     // Enumerate the available adapters (i.e., graphics cards)
     IDXGIAdapter1* adapter = nullptr;
-    for (uint32_t adapterIndex = 0; g_D3D11Context->GetDxgiFactory()->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND; adapterIndex++)
+    for (uint32_t adapterIndex = 0; g_GraphicContext->GetDxgiFactory()->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND; adapterIndex++)
     {
         // Enumerate the available outputs (i.e., display connectors) for this adapter
         IDXGIOutput* output = nullptr;
@@ -80,7 +80,7 @@ Tako::TakoError Tako::CaptureManager::InitializeDxgiOutputs()
             output = nullptr;
 
             IDXGIOutputDuplication* duplicator;
-            hr = dxgiOutput1->DuplicateOutput(g_D3D11Context->GetDevice().Get(), &duplicator);
+            hr = dxgiOutput1->DuplicateOutput(g_GraphicContext->GetDevice().Get(), &duplicator);
 
             if (FAILED(hr))
                 continue;
@@ -143,7 +143,7 @@ Tako::TakoError Tako::CaptureManager::Capture(uint32_t displayIndex, TakoDisplay
     if (err != TakoError::OK)
         return err;
 
-    g_D3D11Context->GetDeviceContext()->CopyResource(m_CapturedTextures[displayIndex].Get(), srcTexture);
+    g_GraphicContext->GetDeviceContext()->CopyResource(m_CapturedTextures[displayIndex].Get(), srcTexture);
 
     err = ReleaseFrame(displayIndex, srcTexture);
     if (err != TakoError::OK)
@@ -173,7 +173,7 @@ Tako::TakoError Tako::CaptureManager::CreateOutputTexture(uint32_t displayIndex,
     desc.CPUAccessFlags = 0;
     desc.MiscFlags = 0;
 
-    HRESULT hr = g_D3D11Context->GetDevice()->CreateTexture2D(&desc, nullptr, out);
+    HRESULT hr = g_GraphicContext->GetDevice()->CreateTexture2D(&desc, nullptr, out);
     if (FAILED(hr))
         return TakoError::DX11_ERROR;
 

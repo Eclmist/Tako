@@ -17,25 +17,25 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "d3d11context.h"
+#include "graphiccontext.h"
 
-Tako::TakoError Tako::D3D11Context::Initialize()
+Tako::TakoError Tako::GraphicContext::Initialize()
 {
     TakoError err;
 
-    err = InitializeD3D11();
+    err = InitializeGraphicsApi();
     if (err != TakoError::OK)
         return err;
 
     return TakoError::OK;
 }
 
-Tako::TakoError Tako::D3D11Context::Shutdown()
+Tako::TakoError Tako::GraphicContext::Shutdown()
 {
     return TakoError::OK;
 }
 
-Tako::TakoError Tako::D3D11Context::InitializeD3D11()
+Tako::TakoError Tako::GraphicContext::InitializeGraphicsApi()
 {
     TakoError err;
 
@@ -48,7 +48,7 @@ Tako::TakoError Tako::D3D11Context::InitializeD3D11()
     return TakoError::OK;
 }
 
-Tako::TakoError Tako::D3D11Context::InitializeDevice()
+Tako::TakoError Tako::GraphicContext::InitializeDevice()
 {
     D3D_DRIVER_TYPE driverTypes[] =
     {
@@ -91,7 +91,7 @@ Tako::TakoError Tako::D3D11Context::InitializeDevice()
     return TakoError::OK;
 }
 
-Tako::TakoError Tako::D3D11Context::InitializeDxgi()
+Tako::TakoError Tako::GraphicContext::InitializeDxgi()
 {
     HRESULT hr = m_Device->QueryInterface(__uuidof(IDXGIDevice), &m_DxgiDevice);
     if (FAILED(hr))
